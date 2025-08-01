@@ -104,8 +104,10 @@ public class StringMatcher
 
     public void horspool(String text, String pattern)
     {
+        // TODO: Fix the timings to measure only what's needed
         long startTime = System.nanoTime();
-        // TODO
+
+        String[][] shiftTable = buildShiftTable(pattern);
 
         long endTime = System.nanoTime();
         long durationInNanos = endTime - startTime;
@@ -114,8 +116,83 @@ public class StringMatcher
 
     }
 
+    private String[][] buildShiftTable(String pattern)
+    {
+        // What's cheaper: doing it with an array list, or two loops?
+        Set<Character> charSet = new HashSet<>();
+        int patternLen = pattern.length();
+
+        for (int i = 0; i < patternLen; i++)
+        {
+            charSet.add(pattern.charAt(i));
+        }
+
+        int amtUniqueChars = charSet.size();
+        char[] uniqueChars = new char[amtUniqueChars];
+
+        for (int i = 0; i < patternLen; i++)
+        {
+            uniqueChars[i] = pattern.charAt(i);
+        }
+
+        // + 1 for all other values
+        int tSize = charSet.size() + 1;
+
+        String[][] shiftTable = calcShiftTVals(pattern, tSize, patternLen, charSet);
+
+        return shiftTable;
+    }
+
+    private String[][] calcShiftTVals(String pattern, int tSize,
+                                      int patternLen, Set<Character> charSet)
+    {
+        // Value = length - 1 - index
+        String[][] shiftTable = new String[tSize][2];
+
+        int i = 0;
+
+        for (Character ch : charSet)
+        {
+            if (i > tSize) break;
+
+            shiftTable[i][0] = ch.toString();
+            shiftTable[i][1] = "" + patternLen;
+
+            i++;
+        }
+
+        // * represents every other char
+        shiftTable[i][0] = "*";
+        shiftTable[i][1] = "" + patternLen;
+
+        // Convert pattern string to array
+        char[] pattArr = pattern.toCharArray();
+
+        // -1 since last char is ignored
+        for (int j = 0; j < patternLen - 1; j++)
+        {
+            int value = patternLen - j - 1;
+            charInx = getCharInx(pattArr[j], charSet)
+            shiftTable[getCharInx(pattArr[j])][j] = String.valueOf(pattArr[value]);
+
+        }
+
+        return shiftTable;
+    }
+
+    private int getCharInx(char c,  Set<Character> charSet)
+    {
+        for (Character ch : charSet)
+        {
+            if (ch == c)
+                return charSet.
+        }
+
+    }
+
     public void naive(String text, String pattern)
     {
+        // TODO: Fix the timings to measure only what's needed
         long startTime = System.nanoTime(); // start time measure
 
         int patternLen = pattern.length();
