@@ -9,6 +9,9 @@ public class StringMatcher
     private StringBuilder outputText;
     private int occurrences;
 
+    //tmp
+    private String inputText;
+
     private final String RESET = "\u001B[0m";
     private final String GREEN = "\u001B[32m";
 
@@ -28,7 +31,7 @@ public class StringMatcher
         this.outputText = new StringBuilder();
 
         String text;
-        this.occurrences = -1;
+        this.occurrences = 0;
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath)))
         {
@@ -40,6 +43,7 @@ public class StringMatcher
 //            text = br.lines().collect(Collectors.joining(System.lineSeparator()));
 
             text = br.readLine(); // TODO: change
+            this.inputText = text;
 
             // by here we've already checked that the algorithm var is valid
            this.occurrences = algorithm.compareToIgnoreCase("horspool") == 0
@@ -71,10 +75,12 @@ public class StringMatcher
         int chunk = pattern.length(); // TODO - change
         for (int i = 0; i < text.length() - patternLen; i++)
         {
-            String subText = text.substring(i, i + (patternLen - 1));
+            String subText = text.substring(i, i + patternLen);
             int index = naiveCore(subText, pattern);
             if (index != -1)
             {
+                // DEBUG
+                System.out.println("Debug; index: " + index);
                 this.occurrences++;
                 markIndex(text, index);
             }
@@ -85,11 +91,18 @@ public class StringMatcher
 
     private void markIndex(String text, int index)
     {
-        StringBuilder sb = new StringBuilder(text.length());
+        // TODO: fix and use index, word after / word before etc..
+        outputText.append(GREEN);
+        outputText.append(text);
+        outputText.append(RESET);
     }
 
     private int naiveCore(String text, String pattern)
     {
+        // DEBUG
+//        System.out.println("Debug; Text received: " + text);
+//        System.out.println("Debug; Pattern Received: " + pattern);
+
         int n = text.length(),
                 m = pattern.length();
 
@@ -111,6 +124,9 @@ public class StringMatcher
     {
         // TODO: implement timings
         double timing = -1.0;
+
+        // TODO: delete; Debug
+        System.out.println("Input text: " + inputText);
 
         // TODO: change occurrences to singular if one
         System.out.println("Occurrences of \"" + pattern + "\": " + occurrences);
