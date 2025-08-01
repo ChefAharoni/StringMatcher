@@ -4,16 +4,16 @@ import java.util.stream.Collectors;
 
 public class StringMatcher
 {
-    public static String horspool(String text)
+    public static int horspool(String text)
     {
         // TODO
-        return "This is horspool.\n" + text.substring(0,100);
+        return -1;
     }
 
-    public static String naive(String text)
+    public static int naive(String text)
     {
         // TODO
-        return "This is naive" + text.substring(0,100);
+        return -1;
     }
 
 
@@ -37,15 +37,15 @@ public class StringMatcher
             System.exit(1);
         }
 
-        String text = null;
-        String output = null;
+        String text;
+        int occurrences = -1;
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath)))
         {
             text = br.lines().collect(Collectors.joining(System.lineSeparator()));
 
             // by here we've already checked that the algorithm var is valid
-            output = algorithm.compareToIgnoreCase("horspool") == 0
+            occurrences = algorithm.compareToIgnoreCase("horspool") == 0
                     ? horspool(text) : naive(text);
 
         } catch (IOException ioe)
@@ -54,7 +54,11 @@ public class StringMatcher
             System.exit(1);
         }
 
-        System.out.println(output);
+        double timing = -1.0;
+
+        // TODO: change occurrences to singular if one
+        System.out.println("Occurrences of \"" + pattern + "\": " + occurrences);
+        System.out.println("Search time: " + timing + " ms");
         System.exit(0);
     }
 }
