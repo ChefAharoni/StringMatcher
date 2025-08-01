@@ -10,11 +10,18 @@ public class StringMatcher
     private int occurrences;
     private double timing;
 
-    //tmp
+    // to optimize?
+//    private ArrayList<Integer> inxs;
+    private Queue<Integer> inxs;
+
+    //tmp TODO--delete
     private String inputText;
 
     private final String RESET = "\u001B[0m";
     private final String GREEN = "\u001B[32m";
+
+    private final int MIN_READ = 131072;
+    private final int MAX_READ = 262144;
 
 
     /**
@@ -31,7 +38,10 @@ public class StringMatcher
         this.pattern = pattern;
         this.outputText = new StringBuilder();
 
-        String text;
+//        inxs = new ArrayList<>();
+        inxs = new LinkedList<>();
+
+        String text = null;
         this.occurrences = 0;
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath)))
@@ -43,12 +53,18 @@ public class StringMatcher
              */
 //            text = br.lines().collect(Collectors.joining(System.lineSeparator()));
 
-            text = br.readLine(); // TODO: change
-            this.inputText = text;
+//            this.inputText = readFile(filePath, br);
+            readFile(filePath, br);
 
             // by here we've already checked that the algorithm var is valid
-           this.occurrences = algorithm.compareToIgnoreCase("horspool") == 0
-                    ? horspool(text, pattern) : naive(text, pattern);
+
+           if (algorithm.compareToIgnoreCase("naive") == 0)
+               naive(inputText, pattern);
+           else if (algorithm.compareToIgnoreCase("horspool") == 0)
+               horspool(inputText, pattern);
+           else // should never reach here
+               System.err.println("Error: Unknown algorithm '" + algorithm + "'"
+               + ".\nBad error location");
 
         } catch (IOException ioe)
         {
@@ -57,13 +73,33 @@ public class StringMatcher
         }
     }
 
-    private String readFile(String filePath)
+    /**
+     * Reads a chunk of data from the file path and returns a buffered reader
+     * of the input text from the text file.
+     * @param filePath The path to the input text file,
+     *                 including file name and extension
+     * @return Input text as buffered reader.
+     */
+    private String readFile(String filePath, BufferedReader br) throws IOException
     {
-        // TODO
-        return "";
+        StringBuilder inputText = new StringBuilder();
+        String line;
+        int lineLen = 0;
+
+        while ((line = br.readLine()) != null &&
+                lineLen < MIN_READ && lineLen < MAX_READ )
+        {
+            inputText.append(line);
+            inputText.append("\n");
+            lineLen += line.length();
+        }
+
+        this.inputText = inputText.toString();
+
+        return inputText.toString(); // perhaps keep as StringBuilder?
     }
 
-    public int horspool(String text, String pattern)
+    public void horspool(String text, String pattern)
     {
         long startTime = System.nanoTime();
         // TODO
@@ -73,16 +109,16 @@ public class StringMatcher
         // Convert to milliseconds
         timing += (double) durationInNanos / 1_000_000.0;
 
-        return -1;
     }
 
-    public int naive(String text, String pattern)
+    public void naive(String text, String pattern)
     {
-        long startTime = System.nanoTime();
+        long startTime = System.nanoTime(); // start time measure
 
         int patternLen = pattern.length();
         // call the core x times
         int chunk = pattern.length(); // TODO - change
+
         for (int i = 0; i < text.length() - patternLen; i++)
         {
             String subText = text.substring(i, i + patternLen); // TODO: substring not allowed
@@ -93,10 +129,8 @@ public class StringMatcher
                 // DEBUG
                 System.out.println("Debug; index: " + i);
                 this.occurrences++;
-                markIndex(subText, i);
-            }
-            else {
-                outputText.append(subText); // not good
+                inxs.add(i); // add index of pattern word
+//                markIndex(subText, i);
             }
         }
 
@@ -104,8 +138,6 @@ public class StringMatcher
         long durationInNanos = endTime - startTime;
         // Convert to milliseconds
         timing += (double) durationInNanos / 1_000_000.0;
-
-        return this.occurrences;
     }
 
     private int naiveCore(String text, String pattern)
@@ -138,6 +170,16 @@ public class StringMatcher
         outputText.append(GREEN);
         outputText.append(text);
         outputText.append(RESET);
+    }
+
+    private void buildOutput(String inputText)
+    {
+        int inputLen = inputText.length();
+
+        for (int i = 0; i < inputLen; i++)
+        {
+            //
+        }
     }
 
 
