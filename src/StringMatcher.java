@@ -8,6 +8,7 @@ public class StringMatcher
     private String pattern;
     private StringBuilder outputText;
     private int occurrences;
+    private double timing;
 
     //tmp
     private String inputText;
@@ -64,37 +65,47 @@ public class StringMatcher
 
     public int horspool(String text, String pattern)
     {
+        long startTime = System.nanoTime();
         // TODO
+
+        long endTime = System.nanoTime();
+        long durationInNanos = endTime - startTime;
+        // Convert to milliseconds
+        timing += (double) durationInNanos / 1_000_000.0;
+
         return -1;
     }
 
     public int naive(String text, String pattern)
     {
+        long startTime = System.nanoTime();
+
         int patternLen = pattern.length();
         // call the core x times
         int chunk = pattern.length(); // TODO - change
         for (int i = 0; i < text.length() - patternLen; i++)
         {
-            String subText = text.substring(i, i + patternLen);
-            int index = naiveCore(subText, pattern);
-            if (index != -1)
+            String subText = text.substring(i, i + patternLen); // TODO: substring not allowed
+//            int index = naiveCore(subText, pattern);
+            int isPattern = naiveCore(subText, pattern);
+            if (isPattern != -1)
             {
                 // DEBUG
-                System.out.println("Debug; index: " + index);
+                System.out.println("Debug; index: " + i);
                 this.occurrences++;
-                markIndex(text, index);
+                markIndex(subText, i);
+            }
+            else {
+                outputText.append(subText); // not good
             }
         }
 
-        return this.occurrences;
-    }
+        long endTime = System.nanoTime();
+        long durationInNanos = endTime - startTime;
+        // Convert to milliseconds
+        timing += (double) durationInNanos / 1_000_000.0;
 
-    private void markIndex(String text, int index)
-    {
-        // TODO: fix and use index, word after / word before etc..
-        outputText.append(GREEN);
-        outputText.append(text);
-        outputText.append(RESET);
+        return this.occurrences;
     }
 
     private int naiveCore(String text, String pattern)
@@ -120,13 +131,25 @@ public class StringMatcher
         return -1;
     }
 
+
+    private void markIndex(String text, int index)
+    {
+        // TODO: fix and use index, word after / word before etc..
+        outputText.append(GREEN);
+        outputText.append(text);
+        outputText.append(RESET);
+    }
+
+
     public void printSolution()
     {
         // TODO: implement timings
-        double timing = -1.0;
+//        timing = -1.0;
 
         // TODO: delete; Debug
         System.out.println("Input text: " + inputText);
+
+        System.out.println(outputText);
 
         // TODO: change occurrences to singular if one
         System.out.println("Occurrences of \"" + pattern + "\": " + occurrences);
