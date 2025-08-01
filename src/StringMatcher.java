@@ -58,9 +58,9 @@ public class StringMatcher
 
             // by here we've already checked that the algorithm var is valid
 
-           if (algorithm.compareToIgnoreCase("naive") == 0)
+           if (algorithm.compareTo("naive") == 0)
                naive(inputText, pattern);
-           else if (algorithm.compareToIgnoreCase("horspool") == 0)
+           else if (algorithm.compareTo("horspool") == 0)
                horspool(inputText, pattern);
            else // should never reach here
                System.err.println("Error: Unknown algorithm '" + algorithm + "'"
@@ -68,7 +68,7 @@ public class StringMatcher
 
         } catch (IOException ioe)
         {
-            System.err.println(ioe);
+            System.err.println("Error: File '" + filePath + "' not found.");
             System.exit(1);
         }
     }
@@ -94,6 +94,9 @@ public class StringMatcher
             lineLen += line.length();
         }
 
+        // Remove last newline
+        inputText.deleteCharAt(inputText.length() - 1);
+
         this.inputText = inputText.toString();
 
         return inputText.toString(); // perhaps keep as StringBuilder?
@@ -116,13 +119,11 @@ public class StringMatcher
         long startTime = System.nanoTime(); // start time measure
 
         int patternLen = pattern.length();
-        // call the core x times
-        int chunk = pattern.length(); // TODO - change
 
+        // call the core x times
         for (int i = 0; i < text.length() - patternLen; i++)
         {
             String subText = text.substring(i, i + patternLen); // TODO: substring not allowed
-//            int index = naiveCore(subText, pattern);
             int isPattern = naiveCore(subText, pattern);
             if (isPattern != -1)
             {
@@ -130,7 +131,6 @@ public class StringMatcher
                 System.out.println("Debug; index: " + i);
                 this.occurrences++;
                 inxs.add(i); // add index of pattern word
-//                markIndex(subText, i);
             }
         }
 
@@ -172,14 +172,73 @@ public class StringMatcher
         outputText.append(RESET);
     }
 
+    // Perhaps it's best to do this after every line??
     private void buildOutput(String inputText)
     {
+        /*
+        * Iterate on every word
+        * Check index of first word
+        *   -> if index of starting word is in the list of inx (or in word)
+        *       -> print this word green and reset
+         */
         int inputLen = inputText.length();
+//        String[] wrds = inputText.split(" ");
 
-        for (int i = 0; i < inputLen; i++)
+        // Splits on the boundary before or after a block of one or more spaces
+        String[] wrds = inputText.split("(?<=\\s+)|(?=\\s+)");
+
+        boolean isPatt = false;
+        int wrdCounter = 0;
+        boolean nextWord = true;
+
+        for (int i = 0; i < inputText.length(); i++)
         {
-            //
+//            System.out.println("Debug; i: " + i);
+            if (inputText.charAt(i) == ' ' || inputText.charAt(i) == '\t' ||
+                    inputText.charAt(i) == '\n')
+            {
+                wrdCounter++;
+                nextWord = true;
+            }
+
+            for (int j = 0; j < wrds[wrdCounter].length(); j++)
+            {
+                if (inxs.contains(i))
+                {
+                    isPatt = true;
+                    break;
+                }
+            } // end of inner loop
+
+            if (isPatt)
+            {
+//                System.out.print("Debug; word: ");
+                addChars();
+//                System.out.println("\nAt index: " + i);
+                isPatt = false;
+            }
+            else if (nextWord)
+            {
+                outputText.append(wrds[wrdCounter]);
+                nextWord = false;
+            }
+
         }
+
+        System.out.println(outputText);
+    }
+
+    private void addChars()
+    {
+        int pattLen = pattern.length();
+
+        for (int i = 0; i < pattLen; i++)
+        {
+            outputText.append(GREEN);
+            outputText.append(pattern.charAt(i));
+            outputText.append(RESET);
+        }
+        outputText.append(" ");
     }
 
 
@@ -189,9 +248,10 @@ public class StringMatcher
 //        timing = -1.0;
 
         // TODO: delete; Debug
-        System.out.println("Input text: " + inputText);
+        System.out.println("Input text: " + inputText + "\n");
 
-        System.out.println(outputText);
+//        System.out.println(outputText);
+        buildOutput(inputText);
 
         // TODO: change occurrences to singular if one
         System.out.println("Occurrences of \"" + pattern + "\": " + occurrences);
@@ -201,7 +261,7 @@ public class StringMatcher
 
     public static void main(String[] args) throws IOException
     {
-        if (args.length < 3)
+        if (args.length != 3)
         {
             System.err.println("Usage: java StringMatcher " +
                     "<algorithm> <input file> <pattern>");
@@ -212,10 +272,10 @@ public class StringMatcher
                 filePath = args[1], // input file
                 pattern = args[2]; // search term
 
-        if (!algorithm.equalsIgnoreCase("horspool") &&
-        !algorithm.equalsIgnoreCase("naive"))
+        if (!algorithm.equals("horspool") &&
+        !algorithm.equals("naive"))
         {
-            System.err.println("Error: Unknown algorithm '" + algorithm + "'");
+            System.err.println("Error: Unknown algorithm '" + algorithm + "'.");
             System.exit(1);
         }
 
