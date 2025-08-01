@@ -4,13 +4,16 @@ import java.util.stream.Collectors;
 
 public class StringMatcher
 {
-    public static int horspool(String text)
+    String RESET = "\u001B[0m";
+    String GREEN = "\u001B[32m";
+
+    public static int horspool(String text, String pattern)
     {
         // TODO
         return -1;
     }
 
-    public static int naive(String text)
+    public static int naive(String text, String pattern)
     {
         // TODO
         return -1;
@@ -42,11 +45,16 @@ public class StringMatcher
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath)))
         {
+            /* TODO - Read chunks of chars, not all file
+            You must read between 131,072 and 262,144 characters in a block of data,
+            process the block, and print the results to the screen.
+            Do not read the entire file into memory at once; some inputs may be too large.
+             */
             text = br.lines().collect(Collectors.joining(System.lineSeparator()));
 
             // by here we've already checked that the algorithm var is valid
             occurrences = algorithm.compareToIgnoreCase("horspool") == 0
-                    ? horspool(text) : naive(text);
+                    ? horspool(text, pattern) : naive(text, pattern);
 
         } catch (IOException ioe)
         {
