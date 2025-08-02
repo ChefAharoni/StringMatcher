@@ -1,6 +1,5 @@
 import java.io.*;
 import java.util.*;
-//import java.util.stream.Collectors;
 
 public class StringMatcher
 {
@@ -10,9 +9,8 @@ public class StringMatcher
     private int occurrences;
     private double timing;
 
-    // to optimize?
-//    private ArrayList<Integer> inxs;
     private Queue<Integer> inxs;
+    private Set<Integer> inxSet;
 
     //tmp TODO--delete
     private String inputText;
@@ -38,8 +36,8 @@ public class StringMatcher
         this.pattern = pattern;
         this.outputText = new StringBuilder();
 
-//        inxs = new ArrayList<>();
         inxs = new LinkedList<>();
+        inxSet = new HashSet<>();
 
         String text = null;
         this.occurrences = 0;
@@ -51,9 +49,7 @@ public class StringMatcher
             process the block, and print the results to the screen.
             Do not read the entire file into memory at once; some inputs may be too large.
              */
-//            text = br.lines().collect(Collectors.joining(System.lineSeparator()));
 
-//            this.inputText = readFile(filePath, br);
             readFile(filePath, br);
 
             // by here we've already checked that the algorithm var is valid
@@ -104,17 +100,18 @@ public class StringMatcher
 
     public void horspool(String text, String pattern)
     {
-        // TODO: Fix the timings to measure only what's needed
-        long startTime = System.nanoTime();
-
         int textLen = text.length();
         int pattLen = pattern.length();
         if (pattLen == 0 || textLen < pattLen) return;
 
-        Map<Character, Integer> shiftTable = buildShiftTable(pattern);
-        int occurrencesBefore = this.occurrences;
 
-        int i = 0; // alignment: pattern[0..pattLen-1] aligned with text[i..i+pattLen-1]
+        // building the shiftTable before timing starts
+        Map<Character, Integer> shiftTable = buildShiftTable(pattern);
+
+        long startTime = System.nanoTime();
+
+        // alignment: pattern[0..pattLen-1] aligned with text[i..i+pattLen-1]
+        int i = 0;
         while (i <= textLen - pattLen)
         {
             int j = pattLen - 1;
@@ -128,6 +125,7 @@ public class StringMatcher
                 // match found at position i
                 this.occurrences++;
                 inxs.add(i);
+                inxSet.add(i);
                 // shift by full pattern length
                 i += pattLen;
             } else
@@ -160,22 +158,18 @@ public class StringMatcher
 
     public void naive(String text, String pattern)
     {
-        // TODO: Fix the timings to measure only what's needed
-        long startTime = System.nanoTime(); // start time measure
-
         int patternLen = pattern.length();
+        if (patternLen == 0 || text.length() < patternLen) return;
 
+        long startTime = System.nanoTime(); // start time measure
         // call the core x times
         for (int i = 0; i < text.length() - patternLen; i++)
         {
-            String subText = text.substring(i, i + patternLen); // TODO: substring not allowed
-            int isPattern = naiveCore(subText, pattern);
-            if (isPattern != -1)
+            if (naiveCore(text, pattern, i))
             {
-                // DEBUG
-                System.out.println("Debug; index: " + i);
                 this.occurrences++;
-                inxs.add(i); // add index of pattern word
+                this.inxs.add(i); // add index of pattern word
+                this.inxSet.add(i);
             }
         }
 
@@ -185,23 +179,25 @@ public class StringMatcher
         timing += (double) durationInNanos / 1_000_000.0;
     }
 
-    private int naiveCore(String text, String pattern)
+    /**
+     * Returns true if pattern matches text at position offset.
+     *
+     * @param text Text to match with pattern
+     * @param pattern Pattern to test
+     * @param offset Position to test
+     * @return True if position matches text, false otherwise
+     */
+    private boolean naiveCore(String text, String pattern, int offset)
     {
-        int n = text.length(),
-                m = pattern.length();
+        int pattLen = pattern.length();
 
-        for (int i = 0, end = n - m; i <= end; i++)
+        for (int i = 0; i < pattLen; i++)
         {
-            for (int j = 0; j < m; j++)
-            {
-                if (pattern.charAt(j) != text.charAt(i + j))
-                    break;
-
-                if (j == m-1) return i;
-            }
+            if (pattern.charAt(i) != text.charAt(offset + i))
+                return false;
         }
 
-        return -1;
+        return true;
     }
 
 
@@ -209,6 +205,7 @@ public class StringMatcher
      * Build output with matched patterns highlighted.
      * Assumes `inxs` contains start indices of matches and `patternLen` is the length
      * of the matched pattern to highlight.
+     *
      * @param inputText The input text upon the output text is built.
      */
     private void buildOutput(String inputText)
@@ -218,11 +215,18 @@ public class StringMatcher
         int n = inputText.length();
         int i = 0;
         while (i < n) {
-            if (inxs.contains(i))
+            if (inxSet.contains(i))
             {
-                // Found a match starting at i; append the full pattern as highlighted
-                String match = inputText.substring(i, Math.min(i + patternLen, n));
-                appendHighlighted(match);
+                // Found a match starting at i;
+                //      append the full pattern as highlighted
+                // building the match manually to avoid using substring
+
+                StringBuilder matchBuilder = new StringBuilder();
+                int end = Math.min(i + patternLen, n);
+                for (int k = i; k < end; k++)
+                    matchBuilder.append(inputText.charAt(k));
+
+                appendHighlighted(matchBuilder.toString());
                 i += patternLen; // skip over matched segment
             } else
             {
@@ -238,6 +242,7 @@ public class StringMatcher
     /**
      * Helper method that adds the matched text (pattern) to the output text
      * in green color.
+     *
      * @param s Matched pattern to add in green.
      */
     private void appendHighlighted(String s) {
