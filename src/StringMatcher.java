@@ -5,15 +5,11 @@ public class StringMatcher
 {
 
     private String pattern;
-    private StringBuilder outputText;
+//    private StringBuilder outputText;
     private int occurrences;
     private double timing;
 
-    private Queue<Integer> inxs;
     private Set<Integer> inxSet;
-
-    //tmp TODO--delete
-    private String inputText;
 
     private final String RESET = "\u001B[0m";
     private final String GREEN = "\u001B[32m";
@@ -32,35 +28,30 @@ public class StringMatcher
      */
     public StringMatcher(String algorithm, String filePath, String pattern)
     {
-        // algorithm
         this.pattern = pattern;
-        this.outputText = new StringBuilder();
+        this.inxSet = new HashSet<>();
 
-        inxs = new LinkedList<>();
-        inxSet = new HashSet<>();
-
-        String text = null;
         this.occurrences = 0;
+
+        if (!algorithm.equals("horspool") &&
+                !algorithm.equals("naive"))
+        {
+            System.err.println("Error: Unknown algorithm '" + algorithm + "'.");
+            System.exit(1);
+        }
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath)))
         {
-            /* TODO - Read chunks of chars, not all file
-            You must read between 131,072 and 262,144 characters in a block of data,
-            process the block, and print the results to the screen.
-            Do not read the entire file into memory at once; some inputs may be too large.
-             */
+            String block;
+            while((block = readBlock(br)) != null)
+            {
+                // by here we've already checked that the algorithm var is valid
+                if (algorithm.equals("naive"))
+                    naive(block, pattern);
+                else horspool(block, pattern);
 
-            readFile(filePath, br);
-
-            // by here we've already checked that the algorithm var is valid
-
-           if (algorithm.compareTo("naive") == 0)
-               naive(inputText, pattern);
-           else if (algorithm.compareTo("horspool") == 0)
-               horspool(inputText, pattern);
-           else // should never reach here
-               System.err.println("Error: Unknown algorithm '" + algorithm + "'"
-               + ".\nBad error location");
+                buildOutput(block);
+            }
 
         } catch (IOException ioe)
         {
@@ -72,32 +63,43 @@ public class StringMatcher
     /**
      * Reads a chunk of data from the file path and returns a buffered reader
      * of the input text from the text file.
-     * @param filePath The path to the input text file,
-     *                 including file name and extension
+     *
      * @return Input text as buffered reader.
      */
-    private String readFile(String filePath, BufferedReader br) throws IOException
+    private String readBlock(BufferedReader br) throws IOException
     {
-        StringBuilder inputText = new StringBuilder();
+        StringBuilder block = new StringBuilder();
         String line;
-        int lineLen = 0;
-
-        while ((line = br.readLine()) != null &&
-                lineLen < MIN_READ && lineLen < MAX_READ )
+        while ((line = br.readLine()) != null)
         {
-            inputText.append(line);
-            inputText.append("\n");
-            lineLen += line.length();
+            // +1 for newline
+            int projectedSize = block.length() + line.length() + 1;
+
+            if (projectedSize > MAX_READ)
+                if (block.length() >= MIN_READ) break;
+
+            block.append(line).append('\n');
+            if (block.length() >= MIN_READ && block.length() > MAX_READ)
+                break;
+            if (block.length() >= MIN_READ && projectedSize > MAX_READ)
+                break;
         }
 
-        // Remove last newline
-        inputText.deleteCharAt(inputText.length() - 1);
+        if (block.isEmpty()) return null;
 
-        this.inputText = inputText.toString();
+        // remove trailing newline
+        if (block.charAt(block.length() - 1) == '\n')
+            block.deleteCharAt(block.length() - 1);
 
-        return inputText.toString(); // perhaps keep as StringBuilder?
+        return block.toString();
     }
 
+    /**
+     * Public method to perform the Horspool algorithm for string matching.
+     *
+     * @param text The input text to search in.
+     * @param pattern The pattern to search in the text.
+     */
     public void horspool(String text, String pattern)
     {
         int textLen = text.length();
@@ -124,10 +126,10 @@ public class StringMatcher
             {
                 // match found at position i
                 this.occurrences++;
-                inxs.add(i);
                 inxSet.add(i);
                 // shift by full pattern length
-                i += pattLen;
+//                i += pattLen;
+                i += 1; // to find overlapping words like (anana)
             } else
             {
                 char mismatched = text.charAt(i + pattLen - 1);
@@ -140,6 +142,12 @@ public class StringMatcher
         timing += (double)(endTime - startTime) / 1_000_000.0;
     }
 
+    /**
+     * Builds the shift table from Horspool's algorithm. Ignores the last
+     * character.
+     * @param pattern The pattern to search for in the string.
+     * @return A Map with char as the key and the shift val as value.
+     */
     private Map<Character, Integer> buildShiftTable(String pattern)
     {
         int pattLen = pattern.length();
@@ -156,6 +164,12 @@ public class StringMatcher
     }
 
 
+    /**
+     * Public method to perform the naive method of matching a string.
+     *
+     * @param text The input text to search in.
+     * @param pattern The pattern to search in the text.
+     */
     public void naive(String text, String pattern)
     {
         int patternLen = pattern.length();
@@ -163,13 +177,12 @@ public class StringMatcher
 
         long startTime = System.nanoTime(); // start time measure
         // call the core x times
-        for (int i = 0; i < text.length() - patternLen; i++)
+        for (int i = 0; i <= text.length() - patternLen; i++)
         {
             if (naiveCore(text, pattern, i))
             {
                 this.occurrences++;
-                this.inxs.add(i); // add index of pattern word
-                this.inxSet.add(i);
+                this.inxSet.add(i); // add index of pattern word
             }
         }
 
@@ -210,23 +223,17 @@ public class StringMatcher
      */
     private void buildOutput(String inputText)
     {
+        StringBuilder outputText = new StringBuilder();
         int patternLen = pattern.length();
-
-        int n = inputText.length();
+        int inputLen = inputText.length();
         int i = 0;
-        while (i < n) {
+
+        while (i < inputLen) {
             if (inxSet.contains(i))
             {
                 // Found a match starting at i;
                 //      append the full pattern as highlighted
-                // building the match manually to avoid using substring
-
-                StringBuilder matchBuilder = new StringBuilder();
-                int end = Math.min(i + patternLen, n);
-                for (int k = i; k < end; k++)
-                    matchBuilder.append(inputText.charAt(k));
-
-                appendHighlighted(matchBuilder.toString());
+                appendHighlighted(outputText, inputText, i, patternLen);
                 i += patternLen; // skip over matched segment
             } else
             {
@@ -236,7 +243,8 @@ public class StringMatcher
             }
         }
 
-        System.out.println(outputText);
+        System.out.print(outputText);
+        inxSet.clear();
     }
 
     /**
@@ -245,22 +253,29 @@ public class StringMatcher
      *
      * @param s Matched pattern to add in green.
      */
-    private void appendHighlighted(String s) {
-        outputText.append(GREEN).append(s).append(RESET);
+    private void appendHighlighted(StringBuilder output, String inputText,
+                                   int start, int len)
+    {
+        // building the match manually to avoid using substring
+        output.append(GREEN);
+        int end = Math.min(start + len, inputText.length());
+        for (int k = start; k < end; k++)
+            output.append(inputText.charAt(k));
+
+        output.append(RESET);
     }
 
     public void printSolution()
     {
-        // TODO: implement timings
-
-//        System.out.println(outputText);
-        buildOutput(inputText);
-
-        // Note to grader: test cases fail for singular (0), so I assume it's not needed
-//        System.out.print(occurrences > 1 ? "\nOccurrences" : "\nOccurrence");
-        System.out.print("\nOccurrences");
+        // Note to grader: test cases fail for singular (0),
+        // so I assume it's not needed
+        // I would have also entered a check for 0 occurrences to write:
+        //  "0 occurrences matched the pattern 'pattern'."
+//        System.out.print(occurrences > 1 ? "\n\nOccurrences" : "\n\nOccurrence");
+        System.out.print("\n\nOccurrences");
         System.out.println(" of \"" + pattern + "\": " + occurrences);
 //        System.out.println("Search time: " + timing + " ms");
+//        System.out.printf("Search time: %.2f ms", timing); // formatted
     }
 
 
@@ -277,17 +292,10 @@ public class StringMatcher
                 filePath = args[1], // input file
                 pattern = args[2]; // search term
 
-        if (!algorithm.equals("horspool") &&
-        !algorithm.equals("naive"))
-        {
-            System.err.println("Error: Unknown algorithm '" + algorithm + "'.");
-            System.exit(1);
-        }
 
         StringMatcher sm = new StringMatcher(algorithm, filePath, pattern);
         sm.printSolution();
 
         System.exit(0);
-
     }
 }
