@@ -107,7 +107,62 @@ public class StringMatcher
         // TODO: Fix the timings to measure only what's needed
         long startTime = System.nanoTime();
 
-        String[][] shiftTable = buildShiftTable(pattern);
+        int patternLen = pattern.length();
+        Map<Character, Integer> shiftTable = buildShiftTable(pattern);
+        System.out.println("Debug; shiftTable: " + shiftTable);
+
+        int pattIndex = patternLen - 1; // the pattern's index
+        int textIndex = 0;              // the text's index
+        int compareInx = patternLen - 1; // the index of the char to test
+
+        while (textIndex < text.length())
+        {
+            // Debug
+            String subText = text.substring(textIndex, textIndex + patternLen);
+            char textChar = text.charAt(compareInx);
+            char pattChar = pattern.charAt(pattIndex);
+
+            if (text.charAt(compareInx) == pattern.charAt(pattIndex))
+            {
+                for (int i = compareInx - 1, j = pattIndex - 1;
+                     j < patternLen;
+                     i--, j--)
+                {
+                    if(text.charAt(i) != pattern.charAt(j))
+                    { // TODO: check if in shiftTable to shift by value
+                        textIndex = compareInx;
+                        pattIndex = patternLen - 1;
+                        compareInx += patternLen;
+                        break;
+                    }
+
+                    if (j == 0)
+                    {
+                        System.out.println("Debug; index: " + i);
+                        this.occurrences++;
+                        inxs.add(i);
+                    }
+                } // end of inner for loop
+            } // end of if statement
+            else if (shiftTable.containsKey(text.charAt(compareInx)))
+            {
+                textIndex = compareInx;
+                pattIndex = patternLen - 1;
+                compareInx += shiftTable.get(text.charAt(compareInx));
+            }
+            else
+            {
+                textIndex = compareInx + 1;
+                pattIndex = 0;
+                compareInx += patternLen;
+            }
+        }
+
+        // loop until last index is pattern index
+        // if character is equal, check the char before until end of pattern index
+        //  or until char is not the same
+        // if char is not the same, check char in the shiftTable to shift by `value`
+        // places.
 
         long endTime = System.nanoTime();
         long durationInNanos = endTime - startTime;
@@ -116,79 +171,21 @@ public class StringMatcher
 
     }
 
-    private String[][] buildShiftTable(String pattern)
+    private Map<Character, Integer> buildShiftTable(String pattern)
     {
-        // What's cheaper: doing it with an array list, or two loops?
-        Set<Character> charSet = new HashSet<>();
-        int patternLen = pattern.length();
+        int pattLen = pattern.length();
+        Map<Character, Integer> shiftTable = new HashMap<>();
 
-        for (int i = 0; i < patternLen; i++)
+        // -1 because ignoring last char
+        for (int i = 0; i < pattLen - 1; i++)
         {
-            charSet.add(pattern.charAt(i));
-        }
-
-        int amtUniqueChars = charSet.size();
-        char[] uniqueChars = new char[amtUniqueChars];
-
-        for (int i = 0; i < patternLen; i++)
-        {
-            uniqueChars[i] = pattern.charAt(i);
-        }
-
-        // + 1 for all other values
-        int tSize = charSet.size() + 1;
-
-        String[][] shiftTable = calcShiftTVals(pattern, tSize, patternLen, charSet);
-
-        return shiftTable;
-    }
-
-    private String[][] calcShiftTVals(String pattern, int tSize,
-                                      int patternLen, Set<Character> charSet)
-    {
-        // Value = length - 1 - index
-        String[][] shiftTable = new String[tSize][2];
-
-        int i = 0;
-
-        for (Character ch : charSet)
-        {
-            if (i > tSize) break;
-
-            shiftTable[i][0] = ch.toString();
-            shiftTable[i][1] = "" + patternLen;
-
-            i++;
-        }
-
-        // * represents every other char
-        shiftTable[i][0] = "*";
-        shiftTable[i][1] = "" + patternLen;
-
-        // Convert pattern string to array
-        char[] pattArr = pattern.toCharArray();
-
-        // -1 since last char is ignored
-        for (int j = 0; j < patternLen - 1; j++)
-        {
-            int value = patternLen - j - 1;
-            charInx = getCharInx(pattArr[j], charSet)
-            shiftTable[getCharInx(pattArr[j])][j] = String.valueOf(pattArr[value]);
-
+            char c = pattern.charAt(i);
+            shiftTable.put(c, pattLen - 1 - i);
         }
 
         return shiftTable;
     }
 
-    private int getCharInx(char c,  Set<Character> charSet)
-    {
-        for (Character ch : charSet)
-        {
-            if (ch == c)
-                return charSet.
-        }
-
-    }
 
     public void naive(String text, String pattern)
     {
