@@ -128,8 +128,8 @@ public class StringMatcher
                 this.occurrences++;
                 inxSet.add(i);
                 // shift by full pattern length
-//                i += pattLen;
-                i += 1; // to find overlapping words like (anana)
+                i += pattLen;
+//                i += 1; // to find overlapping words like (anana)
             } else
             {
                 char mismatched = text.charAt(i + pattLen - 1);
@@ -267,15 +267,10 @@ public class StringMatcher
 
     public void printSolution()
     {
-        // Note to grader: test cases fail for singular (0),
-        // so I assume it's not needed
-        // I would have also entered a check for 0 occurrences to write:
-        //  "0 occurrences matched the pattern 'pattern'."
-//        System.out.print(occurrences > 1 ? "\n\nOccurrences" : "\n\nOccurrence");
         System.out.print("\n\nOccurrences");
         System.out.println(" of \"" + pattern + "\": " + occurrences);
 //        System.out.println("Search time: " + timing + " ms");
-//        System.out.printf("Search time: %.2f ms", timing); // formatted
+        System.out.printf("Search time: %.2f ms%n", timing); // formatted
     }
 
 
