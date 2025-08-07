@@ -5,7 +5,6 @@ public class StringMatcher
 {
 
     private String pattern;
-//    private StringBuilder outputText;
     private int occurrences;
     private double timing;
 
@@ -75,10 +74,11 @@ public class StringMatcher
             // +1 for newline
             int projectedSize = block.length() + line.length() + 1;
 
+            block.append(line).append(System.lineSeparator());
+
             if (projectedSize > MAX_READ)
                 if (block.length() >= MIN_READ) break;
 
-            block.append(line).append('\n');
             if (block.length() >= MIN_READ && block.length() > MAX_READ)
                 break;
             if (block.length() >= MIN_READ && projectedSize > MAX_READ)
@@ -88,8 +88,8 @@ public class StringMatcher
         if (block.isEmpty()) return null;
 
         // remove trailing newline
-        if (block.charAt(block.length() - 1) == '\n')
-            block.deleteCharAt(block.length() - 1);
+//        if (block.charAt(block.length() - 1).compare(System.lineSeparator()))
+//            block.deleteCharAt(block.length() - 1);
 
         return block.toString();
     }
