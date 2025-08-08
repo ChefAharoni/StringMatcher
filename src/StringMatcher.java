@@ -87,10 +87,6 @@ public class StringMatcher
 
         if (block.isEmpty()) return null;
 
-        // remove trailing newline
-//        if (block.charAt(block.length() - 1).compare(System.lineSeparator()))
-//            block.deleteCharAt(block.length() - 1);
-
         return block.toString();
     }
 
@@ -267,7 +263,7 @@ public class StringMatcher
 
     public void printSolution()
     {
-        System.out.print("\n\nOccurrences");
+        System.out.print("\nOccurrences");
         System.out.println(" of \"" + pattern + "\": " + occurrences);
 //        System.out.println("Search time: " + timing + " ms");
         System.out.printf("Search time: %.2f ms%n", timing); // formatted
